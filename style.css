@@ -5,6 +5,7 @@
 
 body {
   font-size: 10px;
+  background: #eee;
 }
 
 .container {
@@ -20,10 +21,61 @@ body {
 
 #canvas {
   display: block;
-
   border: 1 solid #ddd;
   box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.4);
   -webkit-box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.4);
   -moz-box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.4);
-  margin: 20px auto;
+  margin: 10px auto;
+}
+
+.score {
+  padding-top: 10px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.score #score {
+  color: blueviolet;
+  font-weight: 700;
+}
+
+.controls {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.control-group {
+  display: flex;
+  gap: 40px;
+}
+
+.control-item {
+  width: 60px;
+  height: 25px;
+  background: pink;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: rgb(255, 81, 110);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.5 ease-in;
+  opacity: 0.7;
+  user-select: none;
+  -webkit-box-shadow: 0px 0px 5px 0px rgba(255, 81, 110, 0.75);
+  -moz-box-shadow: 0px 0px 5px 0px rgba(255, 81, 110, 0.75);
+  box-shadow: 0px 0px 5px 0px rgba(255, 81, 110, 0.75);
+}
+
+.control-item:active {
+  background-color: rgb(255, 145, 163);
 }

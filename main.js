@@ -1,16 +1,16 @@
 // <---CONSTANT--->
 
-const BRICK_SIZE = 29;
-const COLS = 11;
-const ROWS = 19;
+const BRICK_SIZE = 20;
+const COLS = 15;
+const ROWS = 27;
 const COLORS_MAPPING = [
   "#400D51",
   "#D800A6",
   "#CC3636",
   "#FFDE00",
-  "#D6CDA4",
+  "#87A2FB",
   "#E38B29",
-  "#FFD39A",
+  "#367E18",
   "white",
 ];
 const BRICK_LAYOUT = [
@@ -177,176 +177,236 @@ const BRICK_LAYOUT = [
     ],
   ],
 ];
-const WHITE_BRICK = 7;
-const GRID_LINE_COLOR = "#F1EFDC";
+const WHITE_BRICK_ID = 7;
+const GRID_LINE_COLOR = "#F1F1F1";
 
-// <---CONTENT--->
+// <---SETUP APP--->
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+const score = document.getElementById("score");
 
+// <--- FUNCTION HELPER --->
+
+function generalLayoutActive() {
+  return Math.floor(Math.random() * 10) % BRICK_LAYOUT[0].length;
+}
+
+function generalLayout() {
+  return BRICK_LAYOUT[Math.floor(Math.random() * 10) % BRICK_LAYOUT.length];
+}
+
+function generalColorId() {
+  return Math.floor(Math.random() * 10) % (COLORS_MAPPING.length - 1);
+}
+
+// <--- GENERAL BOARD --->
 class Board {
-  start() {
-    ctx.canvas.width = BRICK_SIZE * COLS;
-    ctx.canvas.height = BRICK_SIZE * ROWS;
+  constructor() {
+    ctx.canvas.width = COLS * BRICK_SIZE;
+    ctx.canvas.height = ROWS * BRICK_SIZE;
+    this.grid = this.generalGrid();
+    this.score = 0;
   }
 
-  drawCell({ row, col, color = COLORS_MAPPING[WHITE_BRICK] }) {
-    ctx.fillStyle = color;
-    ctx.fillRect(col * BRICK_SIZE, row * BRICK_SIZE, BRICK_SIZE, BRICK_SIZE);
+  updateScore() {
+    score.innerText = this.score;
+  }
+
+  generalGrid() {
+    return Array.from({ length: ROWS }).map(() =>
+      Array(COLS).fill(WHITE_BRICK_ID)
+    );
+  }
+
+  drawCell(xAxis, yAxis, colorId = WHITE_BRICK_ID) {
+    ctx.fillStyle = COLORS_MAPPING[colorId];
+    ctx.fillRect(
+      xAxis * BRICK_SIZE,
+      yAxis * BRICK_SIZE,
+      BRICK_SIZE,
+      BRICK_SIZE
+    );
+
+    this.drawStroke(xAxis, yAxis);
+  }
+
+  drawStroke(xAxis, yAxis) {
     ctx.strokeStyle = GRID_LINE_COLOR;
-    ctx.strokeRect(col * BRICK_SIZE, row * BRICK_SIZE, BRICK_SIZE, BRICK_SIZE);
+    ctx.strokeRect(
+      xAxis * BRICK_SIZE,
+      yAxis * BRICK_SIZE,
+      BRICK_SIZE,
+      BRICK_SIZE
+    );
   }
 
   drawBoard() {
-    for (let row = 0; row < Array(ROWS).length; row++) {
-      for (let col = 0; col < Array(COLS).length; col++) {
-        this.drawCell({ row, col });
+    for (let row = 0; row < this.grid.length; row++) {
+      for (let col = 0; col < this.grid[0].length; col++) {
+        this.drawCell(col, row, this.grid[row][col]);
+      }
+    }
+  }
+
+  checkedCompleteRow() {
+    for (let row = 0; row < this.grid.length; row++) {
+      const isComplete = this.grid[row].every((i) => i !== WHITE_BRICK_ID);
+      if (isComplete) {
+        this.score++;
+        board.updateScore();
       }
     }
   }
 }
 
-class Brick {
-  constructor({
-    row,
-    col,
-    color = COLORS_MAPPING[WHITE_BRICK],
-    layout = BRICK_LAYOUT[0],
-    vector = 0,
-  }) {
-    this.row = row;
-    this.col = col;
-    this.color = color;
-    this.layout = layout;
-    this.vector = vector;
-  }
+const board = new Board();
+board.drawBoard();
 
-  drawCell({ row, col, color = COLORS_MAPPING[WHITE_BRICK] }) {
-    ctx.fillStyle = color;
-    ctx.fillRect(col * BRICK_SIZE, row * BRICK_SIZE, BRICK_SIZE, BRICK_SIZE);
+class Brick {
+  constructor(colPos, rowPos, layout, active, colorId) {
+    this.colPos = colPos;
+    this.rowPos = rowPos;
+    this.layout = layout;
+    this.active = active;
+    this.colorId = colorId;
   }
 
   drawBrick() {
-    for (let i = 0; i < this.layout[this.vector].length; i++) {
-      for (let j = 0; j < this.layout[i].length; j++) {
-        if (this.layout[this.vector][i][j] !== WHITE_BRICK) {
-          if (!this.positionLeft) {
-            this.positionLeft = j;
-          } else {
-            if (j - this.positionLeft <= 0) {
-              this.positionLeft = j;
-            }
-          }
-
-          if (!this.positionRight) {
-            this.positionRight = j + 1;
-          } else {
-            if (j - this.positionRight >= 0) {
-              this.positionRight = j + 1;
-            }
-          }
-
-          this.drawCell({
-            row: i + this.row,
-            col: j + this.col,
-            color: this.color,
-          });
+    const layoutActive = this.layout[this.active];
+    for (let row = 0; row < layoutActive.length; row++) {
+      for (let col = 0; col < layoutActive[0].length; col++) {
+        if (layoutActive[row][col] !== WHITE_BRICK_ID) {
+          board.drawCell(this.colPos + col, this.rowPos + row, this.colorId);
         }
       }
     }
   }
 
   clear() {
-    for (let i = 0; i < this.layout[this.vector].length; i++) {
-      for (let j = 0; j < this.layout[i].length; j++) {
-        ctx.fillStyle = COLORS_MAPPING[WHITE_BRICK];
-        ctx.fillRect(
-          (this.col + i) * BRICK_SIZE,
-          (this.row + j) * BRICK_SIZE,
-          BRICK_SIZE,
-          BRICK_SIZE
-        );
-        ctx.strokeStyle = GRID_LINE_COLOR;
-        ctx.strokeRect(
-          (this.col + i) * BRICK_SIZE,
-          (this.row + j) * BRICK_SIZE,
-          BRICK_SIZE,
-          BRICK_SIZE
-        );
+    const layoutActive = this.layout[this.active];
+    for (let row = 0; row < layoutActive.length; row++) {
+      for (let col = 0; col < layoutActive[0].length; col++) {
+        if (layoutActive[row][col] !== WHITE_BRICK_ID) {
+          board.drawCell(this.colPos + col, this.rowPos + row, 7);
+        }
       }
     }
   }
 
-  checkCollision(nextRow, nextCol, nextLayout) {
+  checkCollision(nextCol, nextRow, nextLayout) {
     for (let row = 0; row < nextLayout.length; row++) {
       for (let col = 0; col < nextLayout[0].length; col++) {
-        if (nextLayout[row][col] !== WHITE_BRICK && nextRow >= 0) {
+        if (nextLayout[row][col] !== WHITE_BRICK_ID && nextRow >= 0) {
           if (
             col + nextCol < 0 ||
             col + nextCol >= COLS ||
-            row + nextRow >= ROWS
+            row + nextRow >= ROWS ||
+            board.grid[row + nextRow][col + nextCol] !== WHITE_BRICK_ID
           )
             return true;
         }
       }
     }
-
     return false;
   }
 
   moveLeft() {
     if (
-      !this.checkCollision(this.row, this.col - 1, this.layout[this.vector])
+      !this.checkCollision(
+        this.colPos - 1,
+        this.rowPos,
+        this.layout[this.active]
+      )
     ) {
       this.clear();
-      this.col = this.col - 1;
+      this.colPos--;
       this.drawBrick();
     }
   }
 
   moveRight() {
     if (
-      !this.checkCollision(this.row, this.col + 1, this.layout[this.vector])
-    ) {
-      this.clear();
-      this.col = this.col + 1;
-      this.drawBrick();
-    }
-  }
-
-  moveDown() {
+      this.checkCollision(
+        this.colPos + 1,
+        this.rowPos,
+        this.layout[this.active]
+      )
+    )
+      return;
     this.clear();
-    this.row = this.row + 1;
+    this.colPos++;
     this.drawBrick();
   }
 
-  rotate() {
-    const nextVector = this.vector + 1 > 3 ? 0 : this.vector + 1;
-    if (!this.checkCollision(this.row, this.col, this.layout[nextVector])) {
+  moveDown() {
+    if (
+      !this.checkCollision(
+        this.colPos,
+        this.rowPos + 1,
+        this.layout[this.active]
+      )
+    ) {
       this.clear();
-      this.vector = nextVector;
+      this.rowPos++;
       this.drawBrick();
+      return;
+    }
+    this.handleLanded();
+    generalNewBrick();
+  }
+
+  rotate() {
+    const nextLayoutActive = this.active + 1 > 3 ? 0 : this.active + 1;
+    if (
+      this.checkCollision(
+        this.colPos,
+        this.rowPos,
+        this.layout[nextLayoutActive]
+      )
+    )
+      return;
+    this.clear();
+    this.active = nextLayoutActive;
+    this.drawBrick();
+  }
+
+  handleLanded() {
+    const layoutActive = this.layout[this.active];
+    for (let row = 0; row < layoutActive.length; row++) {
+      for (let col = 0; col < layoutActive[0].length; col++) {
+        if (layoutActive[row][col] !== WHITE_BRICK_ID) {
+          board.grid[row + this.rowPos][col + this.colPos] = this.colorId;
+          board.drawBoard();
+          board.checkedCompleteRow();
+        }
+      }
     }
   }
 }
 
-// <--- TEST --->
-const board = new Board(ctx);
-const brick = new Brick({
-  row: 2,
-  col: 2,
-  color: COLORS_MAPPING[4],
-  layout: BRICK_LAYOUT[4],
-  vector: 0,
-});
+let brick = new Brick(
+  6,
+  0,
+  generalLayout(),
+  generalLayoutActive(),
+  generalColorId()
+);
 
-board.start();
-board.drawBoard();
 brick.drawBrick();
 
-// <--- CONTROLS --->
+function generalNewBrick() {
+  brick = new Brick(
+    6,
+    0,
+    generalLayout(),
+    generalLayoutActive(),
+    generalColorId()
+  );
+  brick.drawBrick();
+}
 
+// <--- CONTROLS --->
 const e = document.addEventListener("keydown", (e) => {
   switch (e.code) {
     case "ArrowLeft":
@@ -365,3 +425,18 @@ const e = document.addEventListener("keydown", (e) => {
       break;
   }
 });
+
+document
+  .getElementById("rotate")
+  ?.addEventListener("click", () => brick.rotate());
+document
+  .getElementById("left")
+  ?.addEventListener("click", () => brick.moveLeft());
+document
+  .getElementById("right")
+  ?.addEventListener("click", () => brick.moveRight());
+document
+  .getElementById("down")
+  ?.addEventListener("click", () => brick.moveDown());
+
+// <--- TEST --->
